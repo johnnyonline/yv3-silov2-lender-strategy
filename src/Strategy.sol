@@ -28,7 +28,7 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     address[] public allRewardTokens;
 
     /// @notice Names of reward programs to claim for this strategy
-    string[] internal programNames; // @todo: Add public view getter for this
+    string[] public programNames;
 
     /// @notice Mapping to be set by management for any reward tokens.
     //          This can be used to set different mins for different tokens
@@ -54,7 +54,7 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
         address _siloIncentivesController
     ) Base4626Compounder(_asset, _name, _vault) {
         siloIncentivesController = ISiloIncentivesController(_siloIncentivesController);
-        assert(siloIncentivesController.share_token() == _vault, "!incentivesController");
+        require(siloIncentivesController.share_token() == _vault, "!incentivesController");
     }
 
     // ===============================================================
@@ -126,10 +126,7 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     /// @notice Set the swap type for a specific token
     /// @param _from The address of the token to set the swap type for
     /// @param _swapType The swap type to set
-    function setSwapType(
-        address _from,
-        SwapType _swapType
-    ) external onlyManagement {
+    function setSwapType(address _from, SwapType _swapType) external onlyManagement {
         require(_swapType != SwapType.NULL, "remove token instead");
         swapType[_from] = _swapType;
     }
@@ -138,7 +135,7 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     /// @notice Use to set the reward programs we claim rewards from
     /// @param _names Array of reward program names
     function setProgramNames(
-        string[] calldata _names
+        string[] memory _names
     ) external onlyManagement {
         programNames = _names;
     }
@@ -158,11 +155,9 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     // Keeper functions
     // ===============================================================
 
-    /**
-     * @notice Kicks off an auction, updating its status and making funds available for bidding.
-     * @param _from The address of the token to be auctioned.
-     * @return _available The available amount for bidding on in the auction.
-     */
+    /// @notice Kicks off an auction, updating its status and making funds available for bidding
+    /// @param _token The address of the token to be auctioned
+    /// @return _available The available amount for bidding on in the auction
     function kickAuction(
         address _token
     ) external onlyKeepers returns (uint256) {

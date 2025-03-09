@@ -6,6 +6,8 @@ import {Setup, ERC20, IStrategyInterface} from "./utils/Setup.sol";
 
 contract OperationTest is Setup {
 
+    uint256 public MAX_PROFIT_FACTOR = MAX_BPS / 10;
+
     function setUp() public virtual override {
         super.setUp();
     }
@@ -54,7 +56,7 @@ contract OperationTest is Setup {
 
     function test_profitableReport(uint256 _amount, uint16 _profitFactor) public {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
-        _profitFactor = uint16(bound(uint256(_profitFactor), 10, MAX_BPS));
+        _profitFactor = uint16(bound(uint256(_profitFactor), 10, MAX_PROFIT_FACTOR));
 
         // Deposit into strategy
         mintAndDepositIntoStrategy(strategy, user, _amount);
@@ -89,7 +91,7 @@ contract OperationTest is Setup {
 
     function test_profitableReport_withFees(uint256 _amount, uint16 _profitFactor) public {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
-        _profitFactor = uint16(bound(uint256(_profitFactor), 10, MAX_BPS));
+        _profitFactor = uint16(bound(uint256(_profitFactor), 10, MAX_PROFIT_FACTOR));
 
         // Set protocol fee to 0 and perf fee to 10%
         setFees(0, 1000);

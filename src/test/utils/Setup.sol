@@ -27,6 +27,10 @@ interface IFactory {
 
 contract Setup is ExtendedTest, IEvents {
 
+    // Silo
+    address public siloShareToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8
+    address public siloIncentivesController = 0x0dd368Cd6D8869F2b21BA3Cb4fd7bA107a2e3752; // Borrowable USDC.e Deposit, SiloId: 8
+
     // Contract instances that we will use repeatedly.
     ERC20 public asset;
     IStrategyInterface public strategy;
@@ -60,7 +64,7 @@ contract Setup is ExtendedTest, IEvents {
         _setTokenAddrs();
 
         // Set asset
-        asset = ERC20(tokenAddrs["DAI"]);
+        asset = ERC20(tokenAddrs["USDC - Sonic"]);
 
         // Set decimals
         decimals = asset.decimals();
@@ -83,8 +87,13 @@ contract Setup is ExtendedTest, IEvents {
 
     function setUpStrategy() public returns (address) {
         // we save the strategy as a IStrategyInterface to give it the needed interface
-        IStrategyInterface _strategy =
-            IStrategyInterface(address(strategyFactory.newStrategy(address(asset), "Tokenized Strategy")));
+        IStrategyInterface _strategy = IStrategyInterface(
+            address(
+                strategyFactory.newStrategy(
+                    address(asset), "Tokenized Strategy", siloShareToken, siloIncentivesController
+                )
+            )
+        );
 
         vm.prank(management);
         _strategy.acceptManagement();
@@ -149,6 +158,7 @@ contract Setup is ExtendedTest, IEvents {
         tokenAddrs["USDT"] = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
         tokenAddrs["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         tokenAddrs["USDC"] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        tokenAddrs["USDC - Sonic"] = 0x29219dd400f2Bf60E5a23d13Be72B486D4038894;
     }
 
 }
