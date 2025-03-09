@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.18;
 
-import {Strategy, ERC20} from "./Strategy.sol";
+import {SiloV2LenderStrategy, ERC20} from "./Strategy.sol";
 import {IStrategyInterface} from "./interfaces/IStrategyInterface.sol";
 
 contract StrategyFactory {
@@ -39,7 +39,7 @@ contract StrategyFactory {
     ) external virtual returns (address) {
         // tokenized strategies available setters.
         IStrategyInterface _newStrategy = IStrategyInterface(
-            address(new Strategy(_asset, _name))
+            address(new SiloV2LenderStrategy(_asset, _name))
         );
 
         _newStrategy.setPerformanceFeeRecipient(performanceFeeRecipient);
