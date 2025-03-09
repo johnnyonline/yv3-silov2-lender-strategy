@@ -5,6 +5,7 @@ import {SiloV2LenderStrategy} from "./Strategy.sol";
 import {IStrategyInterface} from "./interfaces/IStrategyInterface.sol";
 
 contract StrategyFactory {
+
     event NewStrategy(address indexed strategy, address indexed asset);
 
     address public immutable emergencyAdmin;
@@ -29,11 +30,12 @@ contract StrategyFactory {
     /// @param _vault Silo ERC4626 vault share token to use
     /// @param _siloIncentivesController Address of the Silo rewards distribution contract
     /// @return . The address of the new strategy
-    function newStrategy(address _asset, string calldata _name, address _vault, address _siloIncentivesController)
-        external
-        virtual
-        returns (address)
-    {
+    function newStrategy(
+        address _asset,
+        string calldata _name,
+        address _vault,
+        address _siloIncentivesController
+    ) external virtual returns (address) {
         IStrategyInterface _newStrategy =
             IStrategyInterface(address(new SiloV2LenderStrategy(_asset, _name, _vault, _siloIncentivesController)));
 
@@ -58,8 +60,11 @@ contract StrategyFactory {
         keeper = _keeper;
     }
 
-    function isDeployedStrategy(address _strategy) external view returns (bool) {
+    function isDeployedStrategy(
+        address _strategy
+    ) external view returns (bool) {
         address _asset = IStrategyInterface(_strategy).asset();
         return deployments[_asset] == _strategy;
     }
+
 }

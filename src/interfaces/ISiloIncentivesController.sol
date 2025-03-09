@@ -2,6 +2,8 @@
 pragma solidity 0.8.23;
 
 interface ISiloIncentivesController {
+
     function share_token() external view returns (address);
     function claimRewards(address _to, string[] calldata _programNames) external;
+
 }

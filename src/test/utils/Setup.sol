@@ -12,14 +12,21 @@ import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
 import {IEvents} from "@tokenized-strategy/interfaces/IEvents.sol";
 
 interface IFactory {
+
     function governance() external view returns (address);
 
-    function set_protocol_fee_bps(uint16) external;
+    function set_protocol_fee_bps(
+        uint16
+    ) external;
 
-    function set_protocol_fee_recipient(address) external;
+    function set_protocol_fee_recipient(
+        address
+    ) external;
+
 }
 
 contract Setup is ExtendedTest, IEvents {
+
     // Contract instances that we will use repeatedly.
     ERC20 public asset;
     IStrategyInterface public strategy;
@@ -143,4 +150,5 @@ contract Setup is ExtendedTest, IEvents {
         tokenAddrs["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         tokenAddrs["USDC"] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     }
+
 }

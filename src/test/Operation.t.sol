@@ -5,6 +5,7 @@ import "forge-std/console2.sol";
 import {Setup, ERC20, IStrategyInterface} from "./utils/Setup.sol";
 
 contract OperationTest is Setup {
+
     function setUp() public virtual override {
         super.setUp();
     }
@@ -19,7 +20,9 @@ contract OperationTest is Setup {
         // TODO: add additional check on strat params
     }
 
-    function test_operation(uint256 _amount) public {
+    function test_operation(
+        uint256 _amount
+    ) public {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
 
         // Deposit into strategy
@@ -89,7 +92,7 @@ contract OperationTest is Setup {
         _profitFactor = uint16(bound(uint256(_profitFactor), 10, MAX_BPS));
 
         // Set protocol fee to 0 and perf fee to 10%
-        setFees(0, 1_000);
+        setFees(0, 1000);
 
         // Deposit into strategy
         mintAndDepositIntoStrategy(strategy, user, _amount);
@@ -114,7 +117,7 @@ contract OperationTest is Setup {
         skip(strategy.profitMaxUnlockTime());
 
         // Get the expected fee
-        uint256 expectedShares = (profit * 1_000) / MAX_BPS;
+        uint256 expectedShares = (profit * 1000) / MAX_BPS;
 
         assertEq(strategy.balanceOf(performanceFeeRecipient), expectedShares);
 
@@ -134,7 +137,9 @@ contract OperationTest is Setup {
         assertGe(asset.balanceOf(performanceFeeRecipient), expectedShares, "!perf fee out");
     }
 
-    function test_tendTrigger(uint256 _amount) public {
+    function test_tendTrigger(
+        uint256 _amount
+    ) public {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
 
         (bool trigger,) = strategy.tendTrigger();
@@ -170,4 +175,5 @@ contract OperationTest is Setup {
         (trigger,) = strategy.tendTrigger();
         assertTrue(!trigger);
     }
+
 }

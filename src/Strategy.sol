@@ -8,6 +8,7 @@ import {IAuction} from "./interfaces/IAuction.sol";
 import {ISiloIncentivesController} from "./interfaces/ISiloIncentivesController.sol";
 
 contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
+
     using SafeERC20 for ERC20;
 
     enum SwapType {
@@ -46,9 +47,12 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     /// @param _name Name to use for this strategy. Ideally something human readable for a UI to use.
     /// @param _vault ERC4626 vault token to use. In Curve Lend, these are the base LP tokens.
     /// @param _siloIncentivesController Address of the Silo rewards distribution contract.
-    constructor(address _asset, string memory _name, address _vault, address _siloIncentivesController)
-        Base4626Compounder(_asset, _name, _vault)
-    {
+    constructor(
+        address _asset,
+        string memory _name,
+        address _vault,
+        address _siloIncentivesController
+    ) Base4626Compounder(_asset, _name, _vault) {
         siloIncentivesController = ISiloIncentivesController(_siloIncentivesController);
         assert(siloIncentivesController.share_token() == _vault, "!incentivesController");
     }
@@ -79,7 +83,9 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     // @todo -- make sure this works
     /// @notice Remove a reward token from the strategy
     /// @param _token Address of the token to remove
-    function removeRewardToken(address _token) external onlyManagement {
+    function removeRewardToken(
+        address _token
+    ) external onlyManagement {
         address[] memory _allRewardTokens = allRewardTokens;
         uint256 _length = _allRewardTokens.length;
         bool _found = false;
@@ -101,13 +107,17 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     /// @notice Use to update our trade factory
     /// @dev Can only be called by management
     /// @param _tradeFactory Address of new trade factory
-    function setTradeFactory(address _tradeFactory) external onlyManagement {
+    function setTradeFactory(
+        address _tradeFactory
+    ) external onlyManagement {
         _setTradeFactory(_tradeFactory, address(asset));
     }
 
     /// @notice Set the auction contract
     /// @param _auction The new auction contract
-    function setAuction(IAuction _auction) external onlyManagement {
+    function setAuction(
+        IAuction _auction
+    ) external onlyManagement {
         require(_auction.receiver() == address(this), "!receiver");
         require(_auction.want() == address(asset), "!want");
         auction = _auction;
@@ -116,7 +126,10 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     /// @notice Set the swap type for a specific token
     /// @param _from The address of the token to set the swap type for
     /// @param _swapType The swap type to set
-    function setSwapType(address _from, SwapType _swapType) external onlyManagement {
+    function setSwapType(
+        address _from,
+        SwapType _swapType
+    ) external onlyManagement {
         require(_swapType != SwapType.NULL, "remove token instead");
         swapType[_from] = _swapType;
     }
@@ -124,7 +137,9 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     // @todo -- make sure names are correct
     /// @notice Use to set the reward programs we claim rewards from
     /// @param _names Array of reward program names
-    function setProgramNames(string[] calldata _names) external onlyManagement {
+    function setProgramNames(
+        string[] calldata _names
+    ) external onlyManagement {
         programNames = _names;
     }
 
@@ -148,7 +163,9 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
      * @param _from The address of the token to be auctioned.
      * @return _available The available amount for bidding on in the auction.
      */
-    function kickAuction(address _token) external onlyKeepers returns (uint256) {
+    function kickAuction(
+        address _token
+    ) external onlyKeepers returns (uint256) {
         require(swapType[_token] == SwapType.AUCTION, "!auction");
 
         uint256 _toAuction = ERC20(_token).balanceOf(address(this));
@@ -178,7 +195,9 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     }
 
     /// @inheritdoc Base4626Compounder
-    function _unStake(uint256 /* _amount */ ) internal virtual override {
+    function _unStake(
+        uint256 /* _amount */
+    ) internal virtual override {
         return;
     }
 
@@ -192,20 +211,17 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
             address _token = _allRewardTokens[i];
             SwapType _swapType = swapType[_token];
             uint256 _balance = ERC20(_token).balanceOf(address(this));
-            if (_swapType == SwapType.ATOMIC && _balance > minAmountToSellMapping[_token]) {
-                return;
-                // @todo: add swap logic on Shadow similar to FP's Aerodrome on Moonwell
-                // SILO => S (V2 pool), S => USDC.e (CL pool)
-                // https://github.com/fp-crypto/yearn-v3-levfarming-strategy/blob/levmoonwell/src/LevMoonwellStrategy.sol
-            }
+            if (_swapType == SwapType.ATOMIC && _balance > minAmountToSellMapping[_token]) return;
+            // @todo: add swap logic on Shadow similar to FP's Aerodrome on Moonwell
+            // SILO => S (V2 pool), S => USDC.e (CL pool)
+            // https://github.com/fp-crypto/yearn-v3-levfarming-strategy/blob/levmoonwell/src/LevMoonwellStrategy.sol
         }
     }
 
     /// @inheritdoc TradeFactorySwapper
     function _claimRewards() internal override {
         string[] memory _programNames = programNames;
-        if (_programNames.length > 0) {
-            siloIncentivesController.claimRewards(address(this), _programNames);
-        }
+        if (_programNames.length > 0) siloIncentivesController.claimRewards(address(this), _programNames);
     }
+
 }
