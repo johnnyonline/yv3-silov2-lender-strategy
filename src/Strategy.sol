@@ -58,8 +58,8 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     // ===============================================================
 
     /// @notice Reward tokens on Sonic that can be atomically sold using Shadow DEX
-    address public constant SILO = 0x53f753E4B17F4075D6fa2c6909033d224b81e698;
-    address public constant WRAPPED_S = 0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38;
+    ERC20 public constant SILO = ERC20(0x53f753E4B17F4075D6fa2c6909033d224b81e698);
+    ERC20 public constant WRAPPED_S = ERC20(0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38);
 
     /// @notice Address of the Shadow DEX V2 pools router on Sonic
     IShadowRouter public constant ROUTER = IShadowRouter(0x1D368773735ee1E678950B7A97bcA2CafB330CDc);
@@ -253,8 +253,8 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
                 swapType[_token] == SwapType.ATOMIC
                     && ERC20(_token).balanceOf(address(this)) > minAmountToSellMapping[_token]
             ) {
-                if (_token == SILO) _sellSiloForSonic();
-                if (_token == WRAPPED_S) _sellSonicForUSDC();
+                if (_token == address(SILO)) _sellSiloForSonic();
+                if (_token == address(WRAPPED_S)) _sellSonicForUSDC();
             }
         }
     }
@@ -270,11 +270,11 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     // ===============================================================
 
     function _sellSiloForSonic() internal {
-        uint256 _balance = ERC20(SILO).balanceOf(address(this));
+        uint256 _balance = SILO.balanceOf(address(this));
         if (_balance > 0) {
-            ERC20(SILO).forceApprove(address(ROUTER), _balance);
+            SILO.forceApprove(address(ROUTER), _balance);
             IShadowRouter.route[] memory _routes = new IShadowRouter.route[](1);
-            _routes[0] = IShadowRouter.route({from: SILO, to: WRAPPED_S, stable: false});
+            _routes[0] = IShadowRouter.route({from: address(SILO), to: address(WRAPPED_S), stable: false});
             ROUTER.swapExactTokensForTokens(
                 _balance,
                 0, // minAmountOut
@@ -286,12 +286,12 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     }
 
     function _sellSonicForUSDC() internal {
-        uint256 _balance = ERC20(WRAPPED_S).balanceOf(address(this));
+        uint256 _balance = WRAPPED_S.balanceOf(address(this));
         if (_balance > 0) {
-            ERC20(WRAPPED_S).forceApprove(address(CL_ROUTER), _balance);
+            WRAPPED_S.forceApprove(address(CL_ROUTER), _balance);
             CL_ROUTER.exactInputSingle(
                 IShadowCLRouter.ExactInputSingleParams({
-                    tokenIn: WRAPPED_S,
+                    tokenIn: address(WRAPPED_S),
                     tokenOut: address(asset),
                     tickSpacing: sonicToAssetSwapTickSpacing,
                     recipient: address(this),
