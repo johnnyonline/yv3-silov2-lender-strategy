@@ -75,7 +75,7 @@ contract SettersTest is Setup {
         strategyImpl.setSwapType(_from, SiloV2LenderStrategy.SwapType.NULL);
 
         vm.startPrank(management);
-        vm.expectRevert("remove token instead");
+        vm.expectRevert("!swaptype");
         strategyImpl.setSwapType(_from, SiloV2LenderStrategy.SwapType.NULL);
 
         strategyImpl.setSwapType(_from, SiloV2LenderStrategy.SwapType.ATOMIC);

@@ -5,6 +5,7 @@ import {Base4626Compounder, ERC20, SafeERC20} from "@periphery/Bases/4626Compoun
 import {TradeFactorySwapper} from "@periphery/swappers/TradeFactorySwapper.sol";
 
 import {IAuction} from "./interfaces/IAuction.sol";
+import {ISilo} from "./interfaces/ISilo.sol";
 import {ISiloIncentivesController} from "./interfaces/ISiloIncentivesController.sol";
 import {IShadowRouter} from "./interfaces/IShadowRouter.sol";
 import {IShadowCLRouter} from "./interfaces/IShadowCLRouter.sol";
@@ -13,6 +14,10 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
 
     using SafeERC20 for ERC20;
 
+    // ===============================================================
+    // Enums
+    // ===============================================================
+
     enum SwapType {
         NULL,
         ATOMIC,
@@ -20,19 +25,23 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
         TF
     }
 
-    /// @notice Tick spacing for S to asset swaps on Shadow DEX
+    // ===============================================================
+    // Storage
+    // ===============================================================
+
+    /// @notice Tick spacing for Sonic (S) to asset swaps on Shadow DEX
     int24 public sonicToAssetSwapTickSpacing;
 
-    /// @notice Address for our reward token auction
+    /// @notice Address for the auction contract
     IAuction public auction;
 
     /// @notice Address for the Silo rewards distribution contract
     ISiloIncentivesController public incentivesController;
 
-    /// @notice All reward tokens sold by this strategy by any metho
+    /// @notice All reward tokens sold by this strategy by any method
     address[] private allRewardTokens;
 
-    /// @notice Names of reward programs to claim for this strategy
+    /// @notice Names of reward programs to claim from the Silo rewards distribution contract
     string[] private programNames;
 
     /// @notice Mapping to be set by management for any reward tokens
@@ -41,10 +50,14 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     mapping(address => uint256) public minAmountToSellMapping;
 
     /// @notice Mapping to be set by management for any reward tokens
-    ///         Indicates the swap type for a given token.
+    ///         Indicates the swap type for a given token
     mapping(address => SwapType) public swapType;
 
-    /// @notice Reward tokens that can be atomically sold
+    // ===============================================================
+    // Constants
+    // ===============================================================
+
+    /// @notice Reward tokens on Sonic that can be atomically sold using Shadow DEX
     address public constant SILO = 0x53f753E4B17F4075D6fa2c6909033d224b81e698;
     address public constant WRAPPED_S = 0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38;
 
@@ -58,10 +71,10 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     // Constructor
     // ===============================================================
 
-    /// @param _asset Underlying asset to use for this strategy.
-    /// @param _name Name to use for this strategy. Ideally something human readable for a UI to use.
-    /// @param _vault ERC4626 vault token to use. In Curve Lend, these are the base LP tokens.
-    /// @param _incentivesController Address of the Silo rewards distribution contract.
+    /// @param _asset Underlying asset to use for this strategy
+    /// @param _name Name to use for this strategy. Ideally something human readable for a UI to use
+    /// @param _vault ERC4626 vault token to use. Silo's share token one recieves on borrowable deposits
+    /// @param _incentivesController Address of the Silo rewards distribution contract
     constructor(
         address _asset,
         string memory _name,
@@ -79,13 +92,12 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     // Management functions
     // ===============================================================
 
-    /// @notice Claim rewards from all reward programs
+    /// @notice Manually claim rewards from all reward programs
     function managementClaimRewards() external onlyManagement {
         _claimRewards();
     }
 
-    /// @notice Use to update our trade factory
-    /// @dev Can only be called by management
+    /// @notice Set the trade factory
     /// @param _tradeFactory Address of new trade factory
     function setTradeFactory(
         address _tradeFactory
@@ -93,7 +105,7 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
         _setTradeFactory(_tradeFactory, address(asset));
     }
 
-    /// @notice Sets tick spacing for S -> Asset swap
+    /// @notice Set tick spacing for S -> Asset swaps
     /// @param _sonicToAssetSwapTickSpacing Tick spacing
     function setWethToAssetSwapTickSpacing(
         int24 _sonicToAssetSwapTickSpacing
@@ -121,14 +133,15 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     }
 
     /// @notice Set the swap type for a specific token
+    /// @dev In order to remove a token, use `removeRewardToken()`
     /// @param _from The address of the token to set the swap type for
     /// @param _swapType The swap type to set
     function setSwapType(address _from, SwapType _swapType) external onlyManagement {
-        require(_swapType != SwapType.NULL, "remove token instead");
+        require(_swapType != SwapType.NULL, "!swaptype");
         swapType[_from] = _swapType;
     }
 
-    /// @notice Use to set the reward programs we claim rewards from
+    /// @notice Set the reward programs we claim rewards from
     /// @param _names Array of reward program names
     function setProgramNames(
         string[] memory _names
@@ -140,9 +153,9 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     /// @dev This can be used by management to adjust wether or not the
     ///      _claimAndSellRewards() function will attempt to sell a specific
     ///      reward token. This can be used if liquidity is to low, amounts
-    ///      are to low or any other reason that may cause reverts.
-    /// @param _token The address of the token to adjust.
-    /// @param _amount Min required amount to sell.
+    ///      are to low or any other reason that may cause reverts
+    /// @param _token The address of the token to adjust
+    /// @param _amount Min required amount to sell
     function setMinAmountToSellMapping(address _token, uint256 _amount) external onlyManagement {
         minAmountToSellMapping[_token] = _amount;
     }
@@ -187,7 +200,7 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
 
     /// @notice Kicks off an auction, updating its status and making funds available for bidding
     /// @param _token The address of the token to be auctioned
-    /// @return _available The available amount for bidding on in the auction
+    /// @return The available amount for bidding on in the auction
     function kickAuction(
         address _token
     ) external onlyKeepers returns (uint256) {
@@ -207,13 +220,13 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
 
     /// @notice Get all incentive program names
     /// @return Array of program names
-    function getAllProgramNames() external view returns (string[] memory) {
+    function getAllProgramNames() public view returns (string[] memory) {
         return programNames;
     }
 
     /// @notice Get all reward tokens
     /// @return Array of reward tokens
-    function getAllRewardTokens() external view returns (address[] memory) {
+    function getAllRewardTokens() public view returns (address[] memory) {
         return allRewardTokens;
     }
 
@@ -222,16 +235,24 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     // ===============================================================
 
     /// @inheritdoc Base4626Compounder
+    function _unStake(
+        uint256 /* _amount */
+    ) internal override {
+        ISilo(address(vault)).accrueInterest();
+    }
+
+    /// @inheritdoc Base4626Compounder
     function _claimAndSellRewards() internal override {
         _claimRewards();
 
-        address[] memory _allRewardTokens = allRewardTokens;
+        address[] memory _allRewardTokens = getAllRewardTokens();
         uint256 _length = _allRewardTokens.length;
         for (uint256 i = 0; i < _length; ++i) {
             address _token = _allRewardTokens[i];
-            SwapType _swapType = swapType[_token];
-            uint256 _balance = ERC20(_token).balanceOf(address(this));
-            if (_swapType == SwapType.ATOMIC && _balance > minAmountToSellMapping[_token]) {
+            if (
+                swapType[_token] == SwapType.ATOMIC
+                    && ERC20(_token).balanceOf(address(this)) > minAmountToSellMapping[_token]
+            ) {
                 if (_token == SILO) _sellSiloForSonic();
                 if (_token == WRAPPED_S) _sellSonicForUSDC();
             }
@@ -240,7 +261,7 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
 
     /// @inheritdoc TradeFactorySwapper
     function _claimRewards() internal override {
-        string[] memory _programNames = programNames;
+        string[] memory _programNames = getAllProgramNames();
         if (_programNames.length > 0) incentivesController.claimRewards(address(this), _programNames);
     }
 

@@ -23,7 +23,7 @@ contract OracleTest is Setup {
         // Check set up
         // TODO: Add checks for the setup
         vm.prank(management);
-        oracle.setRewardAssetPriceOracle(AggregatorV3Interface(SONIC_USD_CL_ORACLE), address(WRAPPED_S));
+        oracle.setAssetPriceOracle(AggregatorV3Interface(SONIC_USD_CL_ORACLE), address(WRAPPED_S));
 
         // Set program names
         vm.prank(management);
