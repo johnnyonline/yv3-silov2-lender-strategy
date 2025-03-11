@@ -71,6 +71,4 @@ contract ShutdownTest is Setup {
         assertGe(asset.balanceOf(user), balanceBefore + _amount, "!final balance");
     }
 
-    // TODO: Add tests for any emergency function added.
-
 }

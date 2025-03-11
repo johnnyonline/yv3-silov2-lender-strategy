@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import "forge-std/console2.sol";
 import {ExtendedTest} from "./ExtendedTest.sol";
 
+import {AuctionMock} from "../mocks/AuctionMock.sol";
 import {SiloV2LenderStrategy, ERC20} from "../../Strategy.sol";
 import {StrategyFactory} from "../../StrategyFactory.sol";
 import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
@@ -27,13 +28,20 @@ interface IFactory {
 
 contract Setup is ExtendedTest, IEvents {
 
+    // Reward tokens
+    ERC20 public SILO = ERC20(0x53f753E4B17F4075D6fa2c6909033d224b81e698);
+    ERC20 public WRAPPED_S = ERC20(0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38);
+
     // Silo
     address public siloShareToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8
     address public siloIncentivesController = 0x0dd368Cd6D8869F2b21BA3Cb4fd7bA107a2e3752; // Borrowable USDC.e Deposit, SiloId: 8
+    string[] public incentiveProgramNames = ["wS_sUSDC_008", "SILO_sUSDC_008"];
 
     // Contract instances that we will use repeatedly.
     ERC20 public asset;
     IStrategyInterface public strategy;
+    SiloV2LenderStrategy public strategyImpl;
+    AuctionMock public auction;
 
     StrategyFactory public strategyFactory;
 
@@ -53,9 +61,9 @@ contract Setup is ExtendedTest, IEvents {
     uint256 public decimals;
     uint256 public MAX_BPS = 10_000;
 
-    // Fuzz from $0.01 of 1e6 stable coins up to 1 trillion of a 1e18 coin
-    uint256 public maxFuzzAmount = 1e30;
-    uint256 public minFuzzAmount = 10_000;
+    // Fuzz from $10 of 1e6 stable coins up to 10 million of a 1e6 coin
+    uint256 public maxFuzzAmount = 10_000_000 * 1e6;
+    uint256 public minFuzzAmount = 10 * 1e6;
 
     // Default profit max unlock time is set for 10 days
     uint256 public profitMaxUnlockTime = 10 days;
@@ -73,15 +81,19 @@ contract Setup is ExtendedTest, IEvents {
 
         // Deploy strategy and set variables
         strategy = IStrategyInterface(setUpStrategy());
+        strategyImpl = SiloV2LenderStrategy(address(strategy));
 
+        auction = new AuctionMock(address(asset), address(strategy));
         factory = strategy.FACTORY();
 
         // label all the used addresses for traces
         vm.label(keeper, "keeper");
         vm.label(factory, "factory");
+        vm.label(address(auction), "_auction");
         vm.label(address(asset), "asset");
         vm.label(management, "management");
         vm.label(address(strategy), "strategy");
+        vm.label(address(strategyImpl), "strategyImpl");
         vm.label(performanceFeeRecipient, "performanceFeeRecipient");
     }
 
@@ -136,6 +148,21 @@ contract Setup is ExtendedTest, IEvents {
         deal(address(_asset), _to, balanceBefore + _amount);
     }
 
+    function airdropToSiloAndS(address _to, uint256 _amount) public {
+        airdrop(SILO, _to, _amount);
+        airdrop(WRAPPED_S, _to, _amount);
+    }
+
+    function assertSiloAndSBalance(address _from, bool _moreThanZero) public {
+        if (_moreThanZero) {
+            assertGt(SILO.balanceOf(_from), 0, "assertSiloAndSBalance: TRUE, SILO");
+            assertGt(WRAPPED_S.balanceOf(_from), 0, "assertSiloAndSBalance: TRUE, S");
+        } else {
+            assertEq(SILO.balanceOf(_from), 0, "assertSiloAndSBalance: FALSE, SILO");
+            assertEq(WRAPPED_S.balanceOf(_from), 0, "assertSiloAndSBalance: FALSE, S");
+        }
+    }
+
     function setFees(uint16 _protocolFee, uint16 _performanceFee) public {
         address gov = IFactory(factory).governance();
 
@@ -159,6 +186,13 @@ contract Setup is ExtendedTest, IEvents {
         tokenAddrs["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         tokenAddrs["USDC"] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
         tokenAddrs["USDC - Sonic"] = 0x29219dd400f2Bf60E5a23d13Be72B486D4038894;
+    }
+
+    function _addRewardTokens() internal {
+        vm.startPrank(management);
+        strategyImpl.addRewardToken(address(SILO), SiloV2LenderStrategy.SwapType.ATOMIC);
+        strategyImpl.addRewardToken(address(WRAPPED_S), SiloV2LenderStrategy.SwapType.ATOMIC);
+        vm.stopPrank();
     }
 
 }

@@ -3,6 +3,13 @@ pragma solidity ^0.8.18;
 
 import {IStrategy} from "@tokenized-strategy/interfaces/IStrategy.sol";
 
+import {ISiloIncentivesController} from "./ISiloIncentivesController.sol";
+import {ISilo} from "./ISilo.sol";
+
 interface IStrategyInterface is IStrategy {
-//TODO: Add your specific implementation interface in here.
+
+    function vault() external view returns (ISilo);
+    function incentivesController() external view returns (ISiloIncentivesController);
+    function getAllProgramNames() external view returns (string[] memory);
+
 }
