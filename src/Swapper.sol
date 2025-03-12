@@ -63,8 +63,7 @@ contract Swapper is Ownable2Step {
         IERC20 _token
     ) external onlyOwner {
         uint256 _balance = _token.balanceOf(address(this));
-        if (_balance == 0) return;
-        _token.safeTransfer(owner(), _balance);
+        if (_balance > 0) _token.safeTransfer(owner(), _balance);
     }
 
     // ===============================================================
