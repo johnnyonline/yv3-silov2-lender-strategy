@@ -59,7 +59,9 @@ contract Swapper is Ownable2Step {
     /// @notice Sweep tokens from the contract
     /// @dev This contract should never hold any tokens
     /// @param _token The token to sweep
-    function sweep(IERC20 _token) external onlyOwner {
+    function sweep(
+        IERC20 _token
+    ) external onlyOwner {
         uint256 _balance = _token.balanceOf(address(this));
         if (_balance == 0) return;
         _token.safeTransfer(owner(), _balance);
