@@ -81,13 +81,13 @@ contract SiloV2LenderStrategyAprOracle is AprOracleBase {
      * @return . The expected apr for the strategy represented as 1e18.
      */
     function aprAfterDebtChange(address _strategy, int256 _delta) external view override returns (uint256) {
-        IStrategyInterface _strategy = IStrategyInterface(_strategy);
-        ISilo _silo = ISilo(_strategy.vault());
+        ISilo _silo = ISilo(IStrategyInterface(_strategy).vault());
         uint256 _totalAssets = _silo.totalAssets();
         if (_totalAssets == 0) return 0;
         if (_delta < 0) require(uint256(_delta * -1) < _totalAssets, "!delta");
         uint256 _totalAssetsAfterDelta = uint256(int256(_totalAssets) + _delta);
-        return _lendAPR(_silo, _totalAssetsAfterDelta) + _rewardAPR(_strategy, _silo, _totalAssetsAfterDelta);
+        return _lendAPR(_silo, _totalAssetsAfterDelta)
+            + _rewardAPR(IStrategyInterface(_strategy), _silo, _totalAssetsAfterDelta);
     }
 
     // ===============================================================
@@ -96,7 +96,8 @@ contract SiloV2LenderStrategyAprOracle is AprOracleBase {
 
     function _lendAPR(ISilo _silo, uint256 _totalAssetsAfterDelta) internal view returns (uint256) {
         ISiloConfig.ConfigData memory _cfg = _silo.config().getConfig((address(_silo)));
-        return SILO_LENS.getBorrowAPR(_silo) * _silo.getDebtAssets() / _totalAssetsAfterDelta
+        // slither-disable-next-line divide-before-multiply
+        return (SILO_LENS.getBorrowAPR(_silo) * _silo.getDebtAssets() / _totalAssetsAfterDelta)
             * (_PRECISION - _cfg.daoFee - _cfg.deployerFee) / _PRECISION;
     }
 
@@ -118,6 +119,7 @@ contract SiloV2LenderStrategyAprOracle is AprOracleBase {
             if (_program.distributionEnd <= block.timestamp || _program.emissionPerSecond == 0) continue;
             (uint256 _rewardPrice, uint256 _rewardOracleDecimals) = _getPrice(_program.rewardToken);
             if (_rewardPrice == 0) continue;
+            // slither-disable-next-line divide-before-multiply
             _apr += _program.emissionPerSecond * 365 days * _assetPrecision / _totalSupplyAfterDelta * _rewardPrice
                 / (10 ** _rewardOracleDecimals);
         }

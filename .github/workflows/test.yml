@@ -32,6 +32,11 @@ jobs:
           forge --version
           forge build --sizes
         id: build
+      
+      - name: Run Forge fmt
+        run: |
+          forge fmt --check
+        id: fmt
 
       - name: Run Forge tests
         run: |
