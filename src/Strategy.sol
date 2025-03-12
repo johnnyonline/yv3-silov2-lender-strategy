@@ -8,9 +8,6 @@ import {ISilo} from "./interfaces/ISilo.sol";
 import {ISiloIncentivesController} from "./interfaces/ISiloIncentivesController.sol";
 import {ISwapper} from "./interfaces/ISwapper.sol";
 
-/// @title Silo Finance V2 Lender Strategy
-/// @notice A strategy for compounding Silo rewards into the underlying asset
-/// @dev Inherits Base4626Compounder for vault functionality
 contract SiloV2LenderStrategy is Base4626Compounder {
 
     using SafeERC20 for ERC20;
