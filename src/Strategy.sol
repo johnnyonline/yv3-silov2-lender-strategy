@@ -8,6 +8,9 @@ import {ISilo} from "./interfaces/ISilo.sol";
 import {ISiloIncentivesController} from "./interfaces/ISiloIncentivesController.sol";
 import {ISwapper} from "./interfaces/ISwapper.sol";
 
+/// @title Silo Finance V2 Lender Strategy
+/// @notice A strategy for compounding Silo rewards into the underlying asset
+/// @dev Inherits Base4626Compounder for vault functionality
 contract SiloV2LenderStrategy is Base4626Compounder {
 
     using SafeERC20 for ERC20;
@@ -32,7 +35,7 @@ contract SiloV2LenderStrategy is Base4626Compounder {
     // Constants
     // ===============================================================
 
-    /// @notice Address of the Swapper contract. Used to swap S and SILO rewards for the strategy's asset
+    /// @notice Address of the Swapper contract. Used to swap Sonic and SILO rewards for the strategy's asset
     ISwapper public immutable SWAPPER;
 
     /// @notice Reward tokens on Sonic that can be atomically sold using Shadow DEX
@@ -61,8 +64,8 @@ contract SiloV2LenderStrategy is Base4626Compounder {
 
         SWAPPER = ISwapper(_swapper);
 
-        SILO.forceApprove(address(_swapper), type(uint256).max);
-        WRAPPED_S.forceApprove(address(_swapper), type(uint256).max);
+        SILO.forceApprove(_swapper, type(uint256).max);
+        WRAPPED_S.forceApprove(_swapper, type(uint256).max);
     }
 
     // ===============================================================
@@ -70,6 +73,8 @@ contract SiloV2LenderStrategy is Base4626Compounder {
     // ===============================================================
 
     /// @notice Set the flag to enable/disable the use of the auction contract
+    /// @dev If false, the strategy will use ONLY the `Swapper` to sell rewards
+    ///      If true, the strategy will use ONLY the auction contract to sell rewards
     /// @param _useAuction True to enable the auction contract, false to disable
     function setUseAuction(
         bool _useAuction
