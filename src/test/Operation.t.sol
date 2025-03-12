@@ -72,9 +72,6 @@ contract OperationTest is Setup {
         airdropToSiloAndS(address(strategy), toAirdrop);
         assertSiloAndSBalance(address(strategy), true);
 
-        // Add SILO and S as reward tokens to the strategy
-        _addRewardTokens();
-
         // Report profit
         vm.prank(keeper);
         (uint256 profit, uint256 loss) = strategy.report();
@@ -116,9 +113,6 @@ contract OperationTest is Setup {
         vm.assume(toAirdrop > minFuzzAmount);
         airdropToSiloAndS(address(strategy), toAirdrop);
         assertSiloAndSBalance(address(strategy), true);
-
-        // Add SILO and S as reward tokens to the strategy
-        _addRewardTokens();
 
         // Report profit
         vm.prank(keeper);
@@ -240,41 +234,41 @@ contract OperationTest is Setup {
         assertTrue(!trigger);
     }
 
-    function test_claimRewards(
+    function test_KickAuction(
         uint256 _amount
     ) public {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
 
-        // Deposit into strategy
-        mintAndDepositIntoStrategy(strategy, user, _amount);
+        vm.expectRevert("!keeper");
+        strategyImpl.kickAuction(address(asset));
 
-        // Earn Interest
-        skip(1 days);
-
-        // Set program names
-        vm.prank(management);
-        strategyImpl.setProgramNames(incentiveProgramNames);
-
-        // Manually claim rewards without selling
-        vm.prank(management);
-        strategyImpl.managementClaimRewards();
-
-        // Make sure we got the rewards
-        assertSiloAndSBalance(address(strategy), true);
-
-        // Add SILO and S as reward tokens to the strategy
-        _addRewardTokens();
-
-        // Report profit
         vm.prank(keeper);
-        (uint256 profit, uint256 loss) = strategy.report();
+        vm.expectRevert("!useAuction");
+        strategyImpl.kickAuction(address(WRAPPED_S));
 
-        // Check return Values
-        assertGt(profit, 0, "!profit");
-        assertEq(loss, 0, "!loss");
+        vm.prank(management);
+        strategyImpl.setUseAuction(true);
+        assertTrue(strategyImpl.useAuction());
 
-        // Make sure all rewards were sold
-        assertSiloAndSBalance(address(strategy), false);
+        vm.prank(management);
+        strategyImpl.setAuction(auction);
+        assertEq(address(strategyImpl.auction()), address(auction));
+
+        vm.prank(keeper);
+        vm.expectRevert("!_toAuction");
+        strategyImpl.kickAuction(address(WRAPPED_S));
+
+        vm.prank(keeper);
+        vm.expectRevert("!_token");
+        strategyImpl.kickAuction(address(asset));
+
+        vm.prank(keeper);
+        vm.expectRevert("!_token");
+        strategyImpl.kickAuction(siloShareToken);
+
+        airdrop(WRAPPED_S, address(strategy), _amount);
+        vm.prank(keeper);
+        strategyImpl.kickAuction(address(WRAPPED_S));
     }
 
 }

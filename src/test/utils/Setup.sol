@@ -5,7 +5,8 @@ import "forge-std/console2.sol";
 import {ExtendedTest} from "./ExtendedTest.sol";
 
 import {AuctionMock} from "../mocks/AuctionMock.sol";
-import {SiloV2LenderStrategy, ERC20} from "../../Strategy.sol";
+import {Swapper} from "../../Swapper.sol";
+import {SiloV2LenderStrategy as Strategy, ERC20} from "../../Strategy.sol";
 import {StrategyFactory} from "../../StrategyFactory.sol";
 import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
 
@@ -29,8 +30,8 @@ interface IFactory {
 contract Setup is ExtendedTest, IEvents {
 
     // Reward tokens
-    ERC20 public SILO = ERC20(0x53f753E4B17F4075D6fa2c6909033d224b81e698);
-    ERC20 public WRAPPED_S = ERC20(0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38);
+    ERC20 public constant SILO = ERC20(0x53f753E4B17F4075D6fa2c6909033d224b81e698);
+    ERC20 public constant WRAPPED_S = ERC20(0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38);
 
     // Silo
     address public siloShareToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8
@@ -40,7 +41,8 @@ contract Setup is ExtendedTest, IEvents {
     // Contract instances that we will use repeatedly.
     ERC20 public asset;
     IStrategyInterface public strategy;
-    SiloV2LenderStrategy public strategyImpl;
+    Strategy public strategyImpl;
+    Swapper public swapper;
     AuctionMock public auction;
 
     StrategyFactory public strategyFactory;
@@ -60,6 +62,7 @@ contract Setup is ExtendedTest, IEvents {
     // Integer variables that will be used repeatedly.
     uint256 public decimals;
     uint256 public MAX_BPS = 10_000;
+    int24 public TICK_SPACING = 50;
 
     // Fuzz from $10 of 1e6 stable coins up to 10 million of a 1e6 coin
     uint256 public maxFuzzAmount = 10_000_000 * 1e6;
@@ -78,10 +81,11 @@ contract Setup is ExtendedTest, IEvents {
         decimals = asset.decimals();
 
         strategyFactory = new StrategyFactory(management, performanceFeeRecipient, keeper, emergencyAdmin);
+        swapper = new Swapper(management, TICK_SPACING);
 
         // Deploy strategy and set variables
         strategy = IStrategyInterface(setUpStrategy());
-        strategyImpl = SiloV2LenderStrategy(address(strategy));
+        strategyImpl = Strategy(address(strategy));
 
         auction = new AuctionMock(address(asset), address(strategy));
         factory = strategy.FACTORY();
@@ -102,7 +106,7 @@ contract Setup is ExtendedTest, IEvents {
         IStrategyInterface _strategy = IStrategyInterface(
             address(
                 strategyFactory.newStrategy(
-                    address(asset), "Tokenized Strategy", siloShareToken, siloIncentivesController
+                    address(asset), "Tokenized Strategy", siloShareToken, siloIncentivesController, address(swapper)
                 )
             )
         );
@@ -186,13 +190,6 @@ contract Setup is ExtendedTest, IEvents {
         tokenAddrs["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         tokenAddrs["USDC"] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
         tokenAddrs["USDC - Sonic"] = 0x29219dd400f2Bf60E5a23d13Be72B486D4038894;
-    }
-
-    function _addRewardTokens() internal {
-        vm.startPrank(management);
-        strategyImpl.addRewardToken(address(SILO), SiloV2LenderStrategy.SwapType.ATOMIC);
-        strategyImpl.addRewardToken(address(WRAPPED_S), SiloV2LenderStrategy.SwapType.ATOMIC);
-        vm.stopPrank();
     }
 
 }

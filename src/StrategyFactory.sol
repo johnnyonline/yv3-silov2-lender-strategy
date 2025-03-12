@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.18;
 
-import {SiloV2LenderStrategy} from "./Strategy.sol";
+import {SiloV2LenderStrategy as Strategy} from "./Strategy.sol";
 import {IStrategyInterface} from "./interfaces/IStrategyInterface.sol";
 
 contract StrategyFactory {
@@ -29,15 +29,17 @@ contract StrategyFactory {
     /// @param _name Name to use for this strategy. Ideally something human readable for a UI to use
     /// @param _vault Silo ERC4626 vault share token to use
     /// @param _siloIncentivesController Address of the Silo rewards distribution contract
+    /// @param _swapper Address of the Swapper contract
     /// @return . The address of the new strategy
     function newStrategy(
         address _asset,
         string calldata _name,
         address _vault,
-        address _siloIncentivesController
+        address _siloIncentivesController,
+        address _swapper
     ) external virtual returns (address) {
         IStrategyInterface _newStrategy =
-            IStrategyInterface(address(new SiloV2LenderStrategy(_asset, _name, _vault, _siloIncentivesController)));
+            IStrategyInterface(address(new Strategy(_asset, _name, _vault, _siloIncentivesController, _swapper)));
 
         _newStrategy.setPerformanceFeeRecipient(performanceFeeRecipient);
 

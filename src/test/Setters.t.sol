@@ -4,7 +4,7 @@ pragma solidity ^0.8.18;
 import {ISiloIncentivesController} from "../interfaces/ISiloIncentivesController.sol";
 import {IAuction} from "../interfaces/IAuction.sol";
 
-import {Setup, SiloV2LenderStrategy} from "./utils/Setup.sol";
+import {Setup, Strategy} from "./utils/Setup.sol";
 
 contract SettersTest is Setup {
 
@@ -12,26 +12,26 @@ contract SettersTest is Setup {
         super.setUp();
     }
 
-    function test_SetTradeFactory(
-        address _tradeFactory
+    function test_SetWethToAssetSwapTickSpacing(
+        int24 _sonicToUsdcSwapTickSpacing
     ) public {
-        vm.expectRevert("!management");
-        strategyImpl.setTradeFactory(_tradeFactory);
+        vm.expectRevert();
+        swapper.setSwapTickSpacing(_sonicToUsdcSwapTickSpacing);
 
         vm.prank(management);
-        strategyImpl.setTradeFactory(_tradeFactory);
-        assertEq(strategyImpl.tradeFactory(), _tradeFactory);
+        swapper.setSwapTickSpacing(_sonicToUsdcSwapTickSpacing);
+        assertEq(swapper.sonicToUsdcSwapTickSpacing(), _sonicToUsdcSwapTickSpacing);
     }
 
-    function test_SetWethToAssetSwapTickSpacing(
-        int24 _sonicToAssetSwapTickSpacing
+    function test_SetUseAuction(
+        bool _useAuction
     ) public {
         vm.expectRevert("!management");
-        strategyImpl.setWethToAssetSwapTickSpacing(_sonicToAssetSwapTickSpacing);
+        strategyImpl.setUseAuction(_useAuction);
 
         vm.prank(management);
-        strategyImpl.setWethToAssetSwapTickSpacing(_sonicToAssetSwapTickSpacing);
-        assertEq(strategyImpl.sonicToAssetSwapTickSpacing(), _sonicToAssetSwapTickSpacing);
+        strategyImpl.setUseAuction(_useAuction);
+        assertEq(strategyImpl.useAuction(), _useAuction);
     }
 
     function test_SetAuction(
@@ -68,26 +68,6 @@ contract SettersTest is Setup {
         vm.stopPrank();
     }
 
-    function test_SetSwapType(
-        address _from
-    ) public {
-        vm.expectRevert("!management");
-        strategyImpl.setSwapType(_from, SiloV2LenderStrategy.SwapType.NULL);
-
-        vm.startPrank(management);
-        vm.expectRevert("!swaptype");
-        strategyImpl.setSwapType(_from, SiloV2LenderStrategy.SwapType.NULL);
-
-        strategyImpl.setSwapType(_from, SiloV2LenderStrategy.SwapType.ATOMIC);
-        assertEq(uint8(strategyImpl.swapType(_from)), uint8(SiloV2LenderStrategy.SwapType.ATOMIC));
-
-        strategyImpl.setSwapType(_from, SiloV2LenderStrategy.SwapType.AUCTION);
-        assertEq(uint8(strategyImpl.swapType(_from)), uint8(SiloV2LenderStrategy.SwapType.AUCTION));
-
-        strategyImpl.setSwapType(_from, SiloV2LenderStrategy.SwapType.TF);
-        assertEq(uint8(strategyImpl.swapType(_from)), uint8(SiloV2LenderStrategy.SwapType.TF));
-    }
-
     function test_SetProgramNames(
         string[] memory _names
     ) public {
@@ -100,67 +80,6 @@ contract SettersTest is Setup {
         for (uint256 i = 0; i < _names.length; ++i) {
             assertEq(_programNames[i], _names[i]);
         }
-    }
-
-    function test_SetMinAmountToSellMapping(address _token, uint256 _amount) public {
-        vm.expectRevert("!management");
-        strategyImpl.setMinAmountToSellMapping(_token, _amount);
-
-        vm.prank(management);
-        strategyImpl.setMinAmountToSellMapping(_token, _amount);
-        assertEq(strategyImpl.minAmountToSellMapping(_token), _amount);
-    }
-
-    function test_AddRewardToken(address _token, uint8 _swapType) public {
-        vm.assume(_swapType > 0 && _swapType < 4);
-        vm.assume(_token != address(0));
-
-        vm.expectRevert("!management");
-        strategyImpl.addRewardToken(_token, SiloV2LenderStrategy.SwapType(_swapType));
-
-        vm.startPrank(management);
-
-        vm.expectRevert("!swaptype");
-        strategyImpl.addRewardToken(_token, SiloV2LenderStrategy.SwapType.NULL);
-
-        strategyImpl.addRewardToken(_token, SiloV2LenderStrategy.SwapType(_swapType));
-        assertEq(uint8(strategyImpl.swapType(_token)), _swapType);
-
-        vm.expectRevert("exists");
-        strategyImpl.addRewardToken(_token, SiloV2LenderStrategy.SwapType(_swapType));
-
-        vm.expectRevert("!allowed");
-        strategyImpl.addRewardToken(address(asset), SiloV2LenderStrategy.SwapType(_swapType));
-
-        vm.expectRevert("!allowed");
-        strategyImpl.addRewardToken(siloShareToken, SiloV2LenderStrategy.SwapType(_swapType));
-
-        vm.expectRevert("!allowed");
-        strategyImpl.addRewardToken(address(0), SiloV2LenderStrategy.SwapType(_swapType));
-
-        address[] memory _allRewardTokens = strategyImpl.getAllRewardTokens();
-        assertEq(_allRewardTokens.length, 1);
-        assertEq(_allRewardTokens[0], _token);
-
-        if (SiloV2LenderStrategy.SwapType(_swapType) == SiloV2LenderStrategy.SwapType.TF) {
-            address[] memory _rewardTokens = strategyImpl.rewardTokens();
-            assertEq(_rewardTokens.length, 1);
-            assertEq(_rewardTokens[0], _token);
-        }
-
-        vm.stopPrank();
-    }
-
-    function test_RemoveRewardToken(address _token, uint8 _swapType) public {
-        vm.expectRevert("!management");
-        strategyImpl.removeRewardToken(_token);
-
-        test_AddRewardToken(_token, _swapType);
-
-        vm.startPrank(management);
-        strategyImpl.removeRewardToken(_token);
-        assertEq(uint8(strategyImpl.swapType(_token)), 0);
-        assertEq(strategyImpl.minAmountToSellMapping(_token), 0);
     }
 
 }
