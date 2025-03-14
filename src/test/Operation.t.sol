@@ -195,6 +195,61 @@ contract OperationTest is Setup {
         assertGe(asset.balanceOf(performanceFeeRecipient), expectedShares, "!perf fee out");
     }
 
+    function test_profitableReport_withFees_NoAirdrop_NoSwapper(
+        uint256 _amount
+    ) public {
+        vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
+
+        // Deploy a strategy with no swapper
+        strategy = IStrategyInterface(setUpStrategy(address(0)));
+        vm.label(address(strategy), "strategyNoSwapper");
+
+        // Set useAuction so we're not using the swapper
+        vm.prank(management);
+        strategy.setUseAuction(true);
+
+        // Set protocol fee to 0 and perf fee to 10%
+        setFees(0, 1000);
+
+        // Deposit into strategy
+        mintAndDepositIntoStrategy(strategy, user, _amount);
+
+        assertEq(strategy.totalAssets(), _amount, "!totalAssets");
+
+        // Earn Interest
+        skip(1 days);
+
+        // Report profit
+        vm.prank(keeper);
+        (uint256 profit, uint256 loss) = strategy.report();
+
+        // Check return Values
+        assertGt(profit, 0, "!profit");
+        assertEq(loss, 0, "!loss");
+
+        skip(strategy.profitMaxUnlockTime());
+
+        // Get the expected fee
+        uint256 expectedShares = (profit * 1000) / MAX_BPS;
+
+        assertEq(strategy.balanceOf(performanceFeeRecipient), expectedShares);
+
+        uint256 balanceBefore = asset.balanceOf(user);
+
+        // Withdraw all funds
+        vm.prank(user);
+        strategy.redeem(_amount, user, user);
+
+        assertGe(asset.balanceOf(user), balanceBefore + _amount, "!final balance");
+
+        vm.prank(performanceFeeRecipient);
+        strategy.redeem(expectedShares, performanceFeeRecipient, performanceFeeRecipient);
+
+        checkStrategyTotals(strategy, 0, 0, 0);
+
+        assertGe(asset.balanceOf(performanceFeeRecipient), expectedShares, "!perf fee out");
+    }
+
     function test_tendTrigger(
         uint256 _amount
     ) public {
@@ -271,4 +326,5 @@ contract OperationTest is Setup {
         strategyImpl.kickAuction(address(WRAPPED_S));
     }
 
+    // function test_MaxUtilization -- @todo
 }

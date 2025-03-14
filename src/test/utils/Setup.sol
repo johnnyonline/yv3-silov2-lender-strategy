@@ -84,7 +84,7 @@ contract Setup is ExtendedTest, IEvents {
         swapper = new Swapper(management, TICK_SPACING);
 
         // Deploy strategy and set variables
-        strategy = IStrategyInterface(setUpStrategy());
+        strategy = IStrategyInterface(setUpStrategy(address(swapper)));
         strategyImpl = Strategy(address(strategy));
 
         auction = new AuctionMock(address(asset), address(strategy));
@@ -101,12 +101,12 @@ contract Setup is ExtendedTest, IEvents {
         vm.label(performanceFeeRecipient, "performanceFeeRecipient");
     }
 
-    function setUpStrategy() public returns (address) {
+    function setUpStrategy(address _swapper) public returns (address) {
         // we save the strategy as a IStrategyInterface to give it the needed interface
         IStrategyInterface _strategy = IStrategyInterface(
             address(
                 strategyFactory.newStrategy(
-                    address(asset), "Tokenized Strategy", siloShareToken, siloIncentivesController, address(swapper)
+                    address(asset), "Tokenized Strategy", siloShareToken, siloIncentivesController, _swapper
                 )
             )
         );

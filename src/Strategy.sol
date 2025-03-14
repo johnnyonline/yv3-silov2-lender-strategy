@@ -61,8 +61,10 @@ contract SiloV2LenderStrategy is Base4626Compounder {
 
         SWAPPER = ISwapper(_swapper);
 
-        SILO.forceApprove(_swapper, type(uint256).max);
-        WRAPPED_S.forceApprove(_swapper, type(uint256).max);
+        if (address(_swapper) != address(0)) {
+            SILO.forceApprove(_swapper, type(uint256).max);
+            WRAPPED_S.forceApprove(_swapper, type(uint256).max);
+        }
     }
 
     // ===============================================================
