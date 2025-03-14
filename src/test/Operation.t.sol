@@ -369,4 +369,5 @@ contract OperationTest is Setup {
 
         assertGe(asset.balanceOf(user), balanceBefore + _amount, "!final balance");
     }
+
 }

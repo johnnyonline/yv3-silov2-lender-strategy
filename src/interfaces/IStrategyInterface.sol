@@ -11,6 +11,8 @@ interface IStrategyInterface is IStrategy {
     function vault() external view returns (ISilo);
     function incentivesController() external view returns (ISiloIncentivesController);
     function getAllProgramNames() external view returns (string[] memory);
-    function setUseAuction(bool _useAuction) external;
+    function setUseAuction(
+        bool _useAuction
+    ) external;
 
 }
