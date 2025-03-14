@@ -71,4 +71,52 @@ contract ShutdownTest is Setup {
         assertGe(asset.balanceOf(user), balanceBefore + _amount, "!final balance");
     }
 
+    function test_shutdownCanWithdraw_maxUtilization(
+        uint256 _amount
+    ) public {
+        vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
+
+        // Deposit into strategy
+        mintAndDepositIntoStrategy(strategy, user, _amount);
+
+        assertEq(strategy.totalAssets(), _amount, "!totalAssets");
+
+        // Simulate max borrow so utilization is 100%
+        simulateMaxBorrow();
+
+        // Shutdown the strategy
+        vm.prank(emergencyAdmin);
+        strategy.shutdownStrategy();
+
+        assertEq(strategy.totalAssets(), _amount, "!totalAssets");
+
+        // Revert on redeem
+        vm.prank(user);
+        vm.expectRevert("ERC4626: redeem more than max");
+        strategy.redeem(_amount, user, user);
+
+        // Unwind borrow position
+        unwindSimulateMaxBorrow();
+
+        // Earn Interest
+        skip(1 days);
+
+        // Report profit
+        vm.prank(keeper);
+        (uint256 profit, uint256 loss) = strategy.report();
+
+        // Check return Values
+        assertGt(profit, 0, "!profit");
+        assertEq(loss, 0, "!loss");
+
+        // Make sure we can still withdraw the full amount
+        uint256 balanceBefore = asset.balanceOf(user);
+
+        // Withdraw all funds
+        vm.prank(user);
+        strategy.redeem(_amount, user, user);
+
+        assertGe(asset.balanceOf(user), balanceBefore + _amount, "!final balance");
+    }
+
 }

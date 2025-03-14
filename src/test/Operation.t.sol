@@ -19,7 +19,7 @@ contract OperationTest is Setup {
         assertEq(strategy.management(), management);
         assertEq(strategy.performanceFeeRecipient(), performanceFeeRecipient);
         assertEq(strategy.keeper(), keeper);
-        assertEq(address(strategyImpl.vault()), address(siloShareToken));
+        assertEq(address(strategyImpl.vault()), address(siloLendToken));
         assertEq(address(strategyImpl.incentivesController()), address(siloIncentivesController));
     }
 
@@ -289,7 +289,7 @@ contract OperationTest is Setup {
         assertTrue(!trigger);
     }
 
-    function test_KickAuction(
+    function test_kickAuction(
         uint256 _amount
     ) public {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
@@ -319,12 +319,54 @@ contract OperationTest is Setup {
 
         vm.prank(keeper);
         vm.expectRevert("!_token");
-        strategyImpl.kickAuction(siloShareToken);
+        strategyImpl.kickAuction(siloLendToken);
 
         airdrop(WRAPPED_S, address(strategy), _amount);
         vm.prank(keeper);
         strategyImpl.kickAuction(address(WRAPPED_S));
     }
 
-    // function test_MaxUtilization -- @todo
+    function test_operation_maxUtilization(
+        uint256 _amount
+    ) public {
+        vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
+
+        // Deposit into strategy
+        mintAndDepositIntoStrategy(strategy, user, _amount);
+
+        assertEq(strategy.totalAssets(), _amount, "!totalAssets");
+        assertEq(strategy.maxRedeem(user), _amount, "!maxRedeem");
+
+        // Simulate max borrow so utilization is 100%
+        simulateMaxBorrow();
+
+        assertEq(strategy.maxRedeem(user), 0, "!maxRedeem==0");
+
+        // Revert on redeem
+        vm.prank(user);
+        vm.expectRevert("ERC4626: redeem more than max");
+        strategy.redeem(_amount, user, user);
+
+        // Unwind borrow position
+        unwindSimulateMaxBorrow();
+
+        // Earn Interest
+        skip(1 days);
+
+        // Report profit
+        vm.prank(keeper);
+        (uint256 profit, uint256 loss) = strategy.report();
+
+        // Check return Values
+        assertGt(profit, 0, "!profit");
+        assertEq(loss, 0, "!loss");
+
+        uint256 balanceBefore = asset.balanceOf(user);
+
+        // Withdraw all funds
+        vm.prank(user);
+        strategy.redeem(_amount, user, user);
+
+        assertGe(asset.balanceOf(user), balanceBefore + _amount, "!final balance");
+    }
 }

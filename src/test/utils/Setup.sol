@@ -6,7 +6,7 @@ import {ExtendedTest} from "./ExtendedTest.sol";
 
 import {AuctionMock} from "../mocks/AuctionMock.sol";
 import {Swapper} from "../../Swapper.sol";
-import {SiloV2LenderStrategy as Strategy, ERC20} from "../../Strategy.sol";
+import {SiloV2LenderStrategy as Strategy, ERC20, ISilo} from "../../Strategy.sol";
 import {StrategyFactory} from "../../StrategyFactory.sol";
 import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
 
@@ -34,7 +34,8 @@ contract Setup is ExtendedTest, IEvents {
     ERC20 public constant WRAPPED_S = ERC20(0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38);
 
     // Silo
-    address public siloShareToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8
+    address public siloLendToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8 (SILO1)
+    address public siloCollateralToken = 0xE223C8e92AA91e966CA31d5C6590fF7167E25801; // Borrowable wS Deposit, SiloId: 8 (SILO0)
     address public siloIncentivesController = 0x0dd368Cd6D8869F2b21BA3Cb4fd7bA107a2e3752; // Borrowable USDC.e Deposit, SiloId: 8
     string[] public incentiveProgramNames = ["wS_sUSDC_008", "SILO_sUSDC_008"];
 
@@ -106,7 +107,7 @@ contract Setup is ExtendedTest, IEvents {
         IStrategyInterface _strategy = IStrategyInterface(
             address(
                 strategyFactory.newStrategy(
-                    address(asset), "Tokenized Strategy", siloShareToken, siloIncentivesController, _swapper
+                    address(asset), "Tokenized Strategy", siloLendToken, siloIncentivesController, _swapper
                 )
             )
         );
@@ -165,6 +166,45 @@ contract Setup is ExtendedTest, IEvents {
             assertEq(SILO.balanceOf(_from), 0, "assertSiloAndSBalance: FALSE, SILO");
             assertEq(WRAPPED_S.balanceOf(_from), 0, "assertSiloAndSBalance: FALSE, S");
         }
+    }
+
+    function simulateMaxBorrow() public {
+        ISilo _silo1 = ISilo(siloLendToken); // borrow from
+        ISilo _silo0 = ISilo(siloCollateralToken); // deposit to
+
+        address _usefulWhale = address(420);
+        vm.startPrank(_usefulWhale);
+
+        // Deposit collateral
+        uint256 _collateralAmount = 1e30; // 1 trillion S
+        airdrop(WRAPPED_S, _usefulWhale, _collateralAmount);
+        WRAPPED_S.approve(address(_silo0), _collateralAmount);
+        _silo0.deposit(_collateralAmount, _usefulWhale);
+
+        // Borrow
+        uint256 _borrowAmount = _silo1.getLiquidity();
+        _silo1.borrow(_borrowAmount, _usefulWhale, _usefulWhale);
+        vm.stopPrank();
+
+        // make sure utilization is 100%
+        assertEq(_silo1.getLiquidity(), 0, "!getLiquidity");
+    }
+
+    function unwindSimulateMaxBorrow() public {
+        ISilo _silo1 = ISilo(siloLendToken); // borrow from
+        // ISilo _silo0 = ISilo(siloCollateralToken); // deposit to
+
+        address _usefulWhale = address(420);
+        vm.startPrank(_usefulWhale);
+
+        // Repay
+        uint256 _sharesToRepay = _silo1.maxRepayShares(_usefulWhale);
+        uint256 _assetsToRepay = _silo1.previewRepayShares(_sharesToRepay);
+        airdrop(asset, _usefulWhale, _assetsToRepay);
+        asset.approve(address(_silo1), _assetsToRepay);
+        _silo1.repayShares(_assetsToRepay, _usefulWhale);
+
+        vm.stopPrank();
     }
 
     function setFees(uint16 _protocolFee, uint16 _performanceFee) public {
