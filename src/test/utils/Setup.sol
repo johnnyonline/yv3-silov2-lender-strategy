@@ -65,8 +65,8 @@ contract Setup is ExtendedTest, IEvents {
     uint256 public MAX_BPS = 10_000;
     int24 public TICK_SPACING = 50;
 
-    // Fuzz from $10 of 1e6 stable coins up to 10 million of a 1e6 coin
-    uint256 public maxFuzzAmount = 10_000_000 * 1e6;
+    // Fuzz from $10 of 1e6 coin up to 100 million of a 1e6 coin
+    uint256 public maxFuzzAmount = 100_000_000 * 1e6;
     uint256 public minFuzzAmount = 10 * 1e6;
 
     // Default profit max unlock time is set for 10 days
