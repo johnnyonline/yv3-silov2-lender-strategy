@@ -24,6 +24,11 @@ contract StrategyFactory {
         emergencyAdmin = _emergencyAdmin;
     }
 
+    modifier onlyManagement() {
+        require(msg.sender == management, "!management");
+        _;
+    }
+
     /// @notice Deploy a new Strategy
     /// @param _asset The underlying asset for the strategy to use
     /// @param _name Name to use for this strategy. Ideally something human readable for a UI to use
@@ -37,7 +42,7 @@ contract StrategyFactory {
         address _vault,
         address _siloIncentivesController,
         address _swapper
-    ) external virtual returns (address) {
+    ) external virtual onlyManagement returns (address) {
         IStrategyInterface _newStrategy =
             IStrategyInterface(address(new Strategy(_asset, _name, _vault, _siloIncentivesController, _swapper)));
 
@@ -55,8 +60,11 @@ contract StrategyFactory {
         return address(_newStrategy);
     }
 
-    function setAddresses(address _management, address _performanceFeeRecipient, address _keeper) external {
-        require(msg.sender == management, "!management");
+    function setAddresses(
+        address _management,
+        address _performanceFeeRecipient,
+        address _keeper
+    ) external onlyManagement {
         management = _management;
         performanceFeeRecipient = _performanceFeeRecipient;
         keeper = _keeper;

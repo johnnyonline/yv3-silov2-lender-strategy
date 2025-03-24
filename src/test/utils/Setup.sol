@@ -106,6 +106,7 @@ contract Setup is ExtendedTest, IEvents {
         address _swapper
     ) public returns (address) {
         // we save the strategy as a IStrategyInterface to give it the needed interface
+        vm.prank(management);
         IStrategyInterface _strategy = IStrategyInterface(
             address(
                 strategyFactory.newStrategy(
