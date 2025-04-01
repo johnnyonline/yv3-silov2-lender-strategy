@@ -124,7 +124,7 @@ contract SiloV2LenderStrategy is Base4626Compounder {
         uint256 _toAuction = ERC20(_token).balanceOf(address(this));
         require(_toAuction > 0, "!_toAuction");
 
-        IAuction _auction = IAuction(auction);
+        IAuction _auction = auction;
         ERC20(_token).safeTransfer(address(_auction), _toAuction);
         return _auction.kick(_token);
     }
