@@ -71,6 +71,7 @@ contract OperationTest is Setup {
         vm.assume(toAirdrop > minFuzzAmount);
         airdropToSiloAndS(address(strategy), toAirdrop);
         assertSiloAndSBalance(address(strategy), true);
+        assertSwapperZeroBalance();
 
         // Report profit
         vm.prank(keeper);
@@ -78,6 +79,7 @@ contract OperationTest is Setup {
 
         // Make sure all rewards were sold
         assertSiloAndSBalance(address(strategy), false);
+        assertSwapperZeroBalance();
 
         // Check return Values
         assertGt(profit, 0, "!profit");
@@ -113,6 +115,7 @@ contract OperationTest is Setup {
         vm.assume(toAirdrop > minFuzzAmount);
         airdropToSiloAndS(address(strategy), toAirdrop);
         assertSiloAndSBalance(address(strategy), true);
+        assertSwapperZeroBalance();
 
         // Report profit
         vm.prank(keeper);
@@ -120,6 +123,7 @@ contract OperationTest is Setup {
 
         // Make sure all rewards were sold
         assertSiloAndSBalance(address(strategy), false);
+        assertSwapperZeroBalance();
 
         // Check return Values
         assertGt(profit, 0, "!profit");

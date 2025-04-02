@@ -159,6 +159,7 @@ contract Setup is ExtendedTest, IEvents {
     }
 
     function airdropToSiloAndS(address _to, uint256 _amount) public {
+        if (_amount < 1 ether) _amount = 1 ether;
         airdrop(SILO, _to, _amount);
         airdrop(WRAPPED_S, _to, _amount);
     }
@@ -171,6 +172,12 @@ contract Setup is ExtendedTest, IEvents {
             assertEq(SILO.balanceOf(_from), 0, "assertSiloAndSBalance: FALSE, SILO");
             assertEq(WRAPPED_S.balanceOf(_from), 0, "assertSiloAndSBalance: FALSE, S");
         }
+    }
+
+    function assertSwapperZeroBalance() public {
+        assertEq(SILO.balanceOf(address(swapper)), 0, "assertSwapperZeroBalance: SILO");
+        assertEq(WRAPPED_S.balanceOf(address(swapper)), 0, "assertSwapperZeroBalance: S");
+        assertEq(asset.balanceOf(address(swapper)), 0, "assertSwapperZeroBalance: asset");
     }
 
     function simulateMaxBorrow() public {
