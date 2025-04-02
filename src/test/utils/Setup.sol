@@ -33,11 +33,19 @@ contract Setup is ExtendedTest, IEvents {
     ERC20 public constant SILO = ERC20(0x53f753E4B17F4075D6fa2c6909033d224b81e698);
     ERC20 public constant WRAPPED_S = ERC20(0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38);
 
-    // Silo
-    address public siloLendToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8 (SILO1)
-    address public siloCollateralToken = 0xE223C8e92AA91e966CA31d5C6590fF7167E25801; // Borrowable wS Deposit, SiloId: 8 (SILO0)
-    address public siloIncentivesController = 0x0dd368Cd6D8869F2b21BA3Cb4fd7bA107a2e3752; // Borrowable USDC.e Deposit, SiloId: 8
-    string[] public incentiveProgramNames = ["wS_sUSDC_008", "SILO_sUSDC_008"];
+    // // Silo - USDC
+    // address public siloLendToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8 (SILO1)
+    // address public siloCollateralToken = 0xE223C8e92AA91e966CA31d5C6590fF7167E25801; // Borrowable wS Deposit, SiloId: 8 (SILO0)
+    // address public siloIncentivesController = 0x0dd368Cd6D8869F2b21BA3Cb4fd7bA107a2e3752; // Borrowable USDC.e Deposit, SiloId: 8
+    // string[] public incentiveProgramNames = ["wS_sUSDC_008", "SILO_sUSDC_008"];
+    // bool public toSonic = false;
+
+    // Silo - S
+    address public siloLendToken = 0x24F7692af5231d559219d07c65276Ad8C8ceE9A3; // Borrowable wS Deposit, SiloId: 40 (SILO1)
+    address public siloCollateralToken = 0x058766008d237faF3B05eeEebABc73C64d677bAE; // Borrowable PT-stS-29May Deposit, SiloId: 40 (SILO0)
+    address public siloIncentivesController = 0x4BeFBc8E3885f124C683a2ee4E0B69e785b2C83E; // Borrowable USDC.e Deposit, SiloId: 8
+    string[] public incentiveProgramNames = ["SILO_swS_0040"];
+    bool public toSonic = true;
 
     // Contract instances that we will use repeatedly.
     ERC20 public asset;
@@ -72,17 +80,27 @@ contract Setup is ExtendedTest, IEvents {
     // Default profit max unlock time is set for 10 days
     uint256 public profitMaxUnlockTime = 10 days;
 
+    // Indicates if should treat S as a reward token or not
+    bool public isSonicReward = !toSonic;
+
     function setUp() public virtual {
         _setTokenAddrs();
 
+        // Increase fuzz if 1e18 asset
+        if (toSonic) {
+            maxFuzzAmount *= 1e12;
+            minFuzzAmount *= 1e12;
+        }
+
         // Set asset
-        asset = ERC20(tokenAddrs["USDC - Sonic"]);
+        // asset = ERC20(tokenAddrs["USDC - Sonic"]);
+        asset = ERC20(tokenAddrs["wS"]);
 
         // Set decimals
         decimals = asset.decimals();
 
         strategyFactory = new StrategyFactory(management, performanceFeeRecipient, keeper, emergencyAdmin);
-        swapper = new Swapper(management, TICK_SPACING);
+        swapper = new Swapper(management, TICK_SPACING, toSonic);
 
         // Deploy strategy and set variables
         strategy = IStrategyInterface(setUpStrategy(address(swapper)));
@@ -158,19 +176,18 @@ contract Setup is ExtendedTest, IEvents {
         deal(address(_asset), _to, balanceBefore + _amount);
     }
 
-    function airdropToSiloAndS(address _to, uint256 _amount) public {
-        if (_amount < 1 ether) _amount = 1 ether;
+    function airdropToSiloAndS(address _to, uint256 _amount, bool _airdropS) public {
         airdrop(SILO, _to, _amount);
-        airdrop(WRAPPED_S, _to, _amount);
+        if (_airdropS) airdrop(WRAPPED_S, _to, _amount);
     }
 
-    function assertSiloAndSBalance(address _from, bool _moreThanZero) public {
+    function assertSiloAndSBalance(address _from, bool _moreThanZero, bool _assertS) public {
         if (_moreThanZero) {
             assertGt(SILO.balanceOf(_from), 0, "assertSiloAndSBalance: TRUE, SILO");
-            assertGt(WRAPPED_S.balanceOf(_from), 0, "assertSiloAndSBalance: TRUE, S");
+            if (_assertS) assertGt(WRAPPED_S.balanceOf(_from), 0, "assertSiloAndSBalance: TRUE, S");
         } else {
             assertEq(SILO.balanceOf(_from), 0, "assertSiloAndSBalance: FALSE, SILO");
-            assertEq(WRAPPED_S.balanceOf(_from), 0, "assertSiloAndSBalance: FALSE, S");
+            if (_assertS) assertEq(WRAPPED_S.balanceOf(_from), 0, "assertSiloAndSBalance: FALSE, S");
         }
     }
 
@@ -189,8 +206,8 @@ contract Setup is ExtendedTest, IEvents {
 
         // Deposit collateral
         uint256 _collateralAmount = 1e30; // 1 trillion S
-        airdrop(WRAPPED_S, _usefulWhale, _collateralAmount);
-        WRAPPED_S.approve(address(_silo0), _collateralAmount);
+        airdrop(ERC20(_silo0.asset()), _usefulWhale, _collateralAmount);
+        ERC20(_silo0.asset()).approve(address(_silo0), _collateralAmount);
         _silo0.deposit(_collateralAmount, _usefulWhale);
 
         // Borrow
@@ -204,7 +221,6 @@ contract Setup is ExtendedTest, IEvents {
 
     function unwindSimulateMaxBorrow() public {
         ISilo _silo1 = ISilo(siloLendToken); // borrow from
-        // ISilo _silo0 = ISilo(siloCollateralToken); // deposit to
 
         address _usefulWhale = address(420);
         vm.startPrank(_usefulWhale);
@@ -242,6 +258,7 @@ contract Setup is ExtendedTest, IEvents {
         tokenAddrs["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         tokenAddrs["USDC"] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
         tokenAddrs["USDC - Sonic"] = 0x29219dd400f2Bf60E5a23d13Be72B486D4038894;
+        tokenAddrs["wS"] = 0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38;
     }
 
 }

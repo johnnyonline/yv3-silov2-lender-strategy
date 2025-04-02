@@ -69,8 +69,8 @@ contract OperationTest is Setup {
 
         uint256 toAirdrop = (_amount * _profitFactor) / MAX_BPS;
         vm.assume(toAirdrop > minFuzzAmount);
-        airdropToSiloAndS(address(strategy), toAirdrop);
-        assertSiloAndSBalance(address(strategy), true);
+        airdropToSiloAndS(address(strategy), toAirdrop, isSonicReward);
+        assertSiloAndSBalance(address(strategy), true, isSonicReward);
         assertSwapperZeroBalance();
 
         // Report profit
@@ -78,7 +78,7 @@ contract OperationTest is Setup {
         (uint256 profit, uint256 loss) = strategy.report();
 
         // Make sure all rewards were sold
-        assertSiloAndSBalance(address(strategy), false);
+        assertSiloAndSBalance(address(strategy), false, isSonicReward);
         assertSwapperZeroBalance();
 
         // Check return Values
@@ -113,8 +113,8 @@ contract OperationTest is Setup {
 
         uint256 toAirdrop = (_amount * _profitFactor) / MAX_BPS;
         vm.assume(toAirdrop > minFuzzAmount);
-        airdropToSiloAndS(address(strategy), toAirdrop);
-        assertSiloAndSBalance(address(strategy), true);
+        airdropToSiloAndS(address(strategy), toAirdrop, isSonicReward);
+        assertSiloAndSBalance(address(strategy), true, isSonicReward);
         assertSwapperZeroBalance();
 
         // Report profit
@@ -122,7 +122,7 @@ contract OperationTest is Setup {
         (uint256 profit, uint256 loss) = strategy.report();
 
         // Make sure all rewards were sold
-        assertSiloAndSBalance(address(strategy), false);
+        assertSiloAndSBalance(address(strategy), false, isSonicReward);
         assertSwapperZeroBalance();
 
         // Check return Values
@@ -303,7 +303,7 @@ contract OperationTest is Setup {
 
         vm.prank(keeper);
         vm.expectRevert("!useAuction");
-        strategyImpl.kickAuction(address(WRAPPED_S));
+        strategyImpl.kickAuction(address(SILO));
 
         vm.prank(management);
         strategyImpl.setUseAuction(true);
@@ -315,7 +315,7 @@ contract OperationTest is Setup {
 
         vm.prank(keeper);
         vm.expectRevert("!_toAuction");
-        strategyImpl.kickAuction(address(WRAPPED_S));
+        strategyImpl.kickAuction(address(SILO));
 
         vm.prank(keeper);
         vm.expectRevert("!_token");
@@ -325,9 +325,9 @@ contract OperationTest is Setup {
         vm.expectRevert("!_token");
         strategyImpl.kickAuction(siloLendToken);
 
-        airdrop(WRAPPED_S, address(strategy), _amount);
+        airdrop(SILO, address(strategy), _amount);
         vm.prank(keeper);
-        strategyImpl.kickAuction(address(WRAPPED_S));
+        strategyImpl.kickAuction(address(SILO));
     }
 
     function test_operation_maxUtilization(

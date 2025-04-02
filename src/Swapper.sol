@@ -22,6 +22,9 @@ contract Swapper is Ownable2Step {
     // Constants
     // ===============================================================
 
+    /// @notice If true, `swapRewards` returns Sonic to the caller, otherwise it returns USDC
+    bool public immutable toSonic;
+
     /// @notice Reward tokens on Sonic to swap
     IERC20 public constant USDC = IERC20(0x29219dd400f2Bf60E5a23d13Be72B486D4038894);
     IERC20 public constant SILO = IERC20(0x53f753E4B17F4075D6fa2c6909033d224b81e698);
@@ -39,9 +42,11 @@ contract Swapper is Ownable2Step {
 
     /// @param _management The management address
     /// @param _sonicToUsdcSwapTickSpacing The tick spacing for Sonic to USDC swaps
-    constructor(address _management, int24 _sonicToUsdcSwapTickSpacing) {
+    /// @param _toSonic If true, `swapRewards` returns Sonic to the caller, otherwise it returns USDC
+    constructor(address _management, int24 _sonicToUsdcSwapTickSpacing, bool _toSonic) {
         _transferOwnership(_management);
         sonicToUsdcSwapTickSpacing = _sonicToUsdcSwapTickSpacing;
+        toSonic = _toSonic;
     }
 
     // ===============================================================
@@ -76,7 +81,11 @@ contract Swapper is Ownable2Step {
         uint256 _balance = SILO.balanceOf(msg.sender);
         if (_balance > 0) {
             SILO.safeTransferFrom(msg.sender, address(this), _balance);
-            _swapSiloForSonic(_balance);
+            if (toSonic) {
+                _swapSiloForSonic(_balance, true); // dev: S is sent to msg.sender
+                return;
+            }
+            _swapSiloForSonic(_balance, false); // dev: S is sent to address(this)
         }
 
         _balance = WRAPPED_S.balanceOf(msg.sender);
@@ -90,9 +99,7 @@ contract Swapper is Ownable2Step {
     // Shadow DEX helpers
     // ===============================================================
 
-    function _swapSiloForSonic(
-        uint256 _balance
-    ) internal {
+    function _swapSiloForSonic(uint256 _balance, bool _toMsgSender) internal {
         SILO.forceApprove(address(ROUTER), _balance);
         IShadowRouter.route[] memory _routes = new IShadowRouter.route[](1);
         _routes[0] = IShadowRouter.route({from: address(SILO), to: address(WRAPPED_S), stable: false});
@@ -100,7 +107,7 @@ contract Swapper is Ownable2Step {
             _balance,
             0, // minAmountOut
             _routes,
-            address(this), // to
+            _toMsgSender ? msg.sender : address(this), // to
             block.timestamp // deadline
         );
     }

@@ -38,6 +38,7 @@ contract SiloV2LenderStrategy is Base4626Compounder {
     /// @notice Reward tokens on Sonic that can be atomically sold using Shadow DEX
     ERC20 private constant SILO = ERC20(0x53f753E4B17F4075D6fa2c6909033d224b81e698);
     ERC20 private constant WRAPPED_S = ERC20(0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38);
+    ERC20 private constant USDC = ERC20(0x29219dd400f2Bf60E5a23d13Be72B486D4038894);
 
     // ===============================================================
     // Constructor
@@ -62,6 +63,10 @@ contract SiloV2LenderStrategy is Base4626Compounder {
         SWAPPER = ISwapper(_swapper);
 
         if (address(_swapper) != address(0)) {
+            SWAPPER.toSonic()
+                ? require(_asset == address(WRAPPED_S), "!_swapperToSonic")
+                : require(_asset == address(USDC), "_swapperToSonic");
+
             SILO.forceApprove(_swapper, type(uint256).max);
             WRAPPED_S.forceApprove(_swapper, type(uint256).max);
         }
