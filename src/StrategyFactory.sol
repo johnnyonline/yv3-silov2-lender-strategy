@@ -73,8 +73,11 @@ contract StrategyFactory {
     function isDeployedStrategy(
         address _strategy
     ) external view returns (bool) {
-        address _asset = IStrategyInterface(_strategy).asset();
-        return deployments[_asset] == _strategy;
+        try IStrategyInterface(_strategy).asset() returns (address _asset) {
+            return deployments[_asset] == _strategy;
+        } catch {
+            return false;
+        }
     }
 
 }

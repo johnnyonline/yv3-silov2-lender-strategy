@@ -115,7 +115,7 @@ contract Setup is ExtendedTest, IEvents {
             )
         );
 
-        assertTrue(strategyFactory.isDeployedStrategy(address(_strategy)), "!isDeployedStrategy");
+        assertTrue(strategyFactory.isDeployedStrategy(address(_strategy)), "isDeployedStrategy");
 
         vm.prank(management);
         _strategy.acceptManagement();
