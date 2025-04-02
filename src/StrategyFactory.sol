@@ -14,7 +14,7 @@ contract StrategyFactory {
     address public performanceFeeRecipient;
     address public keeper;
 
-    /// @notice Track the deployments. asset => pool => strategy
+    /// @notice Track the deployments. asset => strategy
     mapping(address => address) public deployments;
 
     constructor(address _management, address _performanceFeeRecipient, address _keeper, address _emergencyAdmin) {
