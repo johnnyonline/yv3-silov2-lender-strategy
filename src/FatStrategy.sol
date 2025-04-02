@@ -235,13 +235,6 @@ contract SiloV2LenderStrategy is Base4626Compounder, TradeFactorySwapper {
     // ===============================================================
 
     /// @inheritdoc Base4626Compounder
-    function _unStake(
-        uint256 /* _amount */
-    ) internal override {
-        ISilo(address(vault)).accrueInterest();
-    }
-
-    /// @inheritdoc Base4626Compounder
     function _claimAndSellRewards() internal override {
         _claimRewards();
 
