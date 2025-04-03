@@ -63,12 +63,13 @@ contract SiloV2LenderStrategy is Base4626Compounder {
         SWAPPER = ISwapper(_swapper);
 
         if (address(_swapper) != address(0)) {
-            SWAPPER.toSonic()
+            bool _toSonic = SWAPPER.toSonic();
+            _toSonic
                 ? require(_asset == address(WRAPPED_S), "!_swapperToSonic")
                 : require(_asset == address(USDC), "_swapperToSonic");
 
             SILO.forceApprove(_swapper, type(uint256).max);
-            WRAPPED_S.forceApprove(_swapper, type(uint256).max);
+            if (!_toSonic) WRAPPED_S.forceApprove(_swapper, type(uint256).max);
         }
     }
 

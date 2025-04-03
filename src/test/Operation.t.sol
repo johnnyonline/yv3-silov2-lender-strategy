@@ -21,6 +21,12 @@ contract OperationTest is Setup {
         assertEq(strategy.keeper(), keeper);
         assertEq(address(strategyImpl.vault()), address(siloLendToken));
         assertEq(address(strategyImpl.incentivesController()), address(siloIncentivesController));
+        if (address(swapper) != address(0)) {
+            assertEq(SILO.allowance(address(strategy), address(swapper)), type(uint256).max);
+            toSonic
+                ? assertEq(WRAPPED_S.allowance(address(strategy), address(swapper)), 0)
+                : assertEq(WRAPPED_S.allowance(address(strategy), address(swapper)), type(uint256).max);
+        }
     }
 
     function test_operation(

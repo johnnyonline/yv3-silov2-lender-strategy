@@ -75,18 +75,21 @@ contract Swapper is Ownable2Step {
     // Mutative functions
     // ===============================================================
 
-    /// @notice Swap SILO and Sonic rewards for USDC
-    /// @dev The USDC is sent directly to the caller in `_swapSonicForUSDC`
+    /// @notice Swap rewards for Asset
+    /// @dev Depending on the `toSonic` flag, this will either swap (1) SILO and Sonic for USDC or (2) SILO for Sonic
     function swapRewards() external {
+        bool _toSonic = toSonic;
         uint256 _balance = SILO.balanceOf(msg.sender);
         if (_balance > 0) {
             SILO.safeTransferFrom(msg.sender, address(this), _balance);
-            if (toSonic) {
+            if (_toSonic) {
                 _swapSiloForSonic(_balance, true); // dev: S is sent to msg.sender
                 return;
             }
             _swapSiloForSonic(_balance, false); // dev: S is sent to address(this)
         }
+
+        if (_toSonic) return;
 
         _balance = WRAPPED_S.balanceOf(msg.sender);
         if (_balance > 0) WRAPPED_S.safeTransferFrom(msg.sender, address(this), _balance);
