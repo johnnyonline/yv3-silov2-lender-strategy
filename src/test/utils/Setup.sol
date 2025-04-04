@@ -33,11 +33,18 @@ contract Setup is ExtendedTest, IEvents {
     ERC20 public constant SILO = ERC20(0x53f753E4B17F4075D6fa2c6909033d224b81e698);
     ERC20 public constant WRAPPED_S = ERC20(0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38);
 
-    // Silo - USDC
-    address public siloLendToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8 (SILO1)
-    address public siloCollateralToken = 0xE223C8e92AA91e966CA31d5C6590fF7167E25801; // Borrowable wS Deposit, SiloId: 8 (SILO0)
-    address public siloIncentivesController = 0x0dd368Cd6D8869F2b21BA3Cb4fd7bA107a2e3752; // Borrowable USDC.e Deposit, SiloId: 8
-    string[] public incentiveProgramNames = ["wS_sUSDC_008", "SILO_sUSDC_008"];
+    // // Silo - USDC (8)
+    // address public siloLendToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8 (SILO1)
+    // address public siloCollateralToken = 0xE223C8e92AA91e966CA31d5C6590fF7167E25801; // Borrowable wS Deposit, SiloId: 8 (SILO0)
+    // address public siloIncentivesController = 0x0dd368Cd6D8869F2b21BA3Cb4fd7bA107a2e3752; // Borrowable USDC.e Deposit, SiloId: 8
+    // string[] public incentiveProgramNames = ["wS_sUSDC_008", "SILO_sUSDC_008"];
+    // bool public toSonic = false;
+
+    // Silo - USDC (20)
+    address public siloLendToken = 0x322e1d5384aa4ED66AeCa770B95686271de61dc3; // Borrowable USDC.e Deposit, SiloId: 20 (SILO1)
+    address public siloCollateralToken = 0xf55902DE87Bd80c6a35614b48d7f8B612a083C12; // Borrowable wS Deposit, SiloId: 20 (SILO0)
+    address public siloIncentivesController = 0x2D3d269334485d2D876df7363e1A50b13220a7D8; // Borrowable USDC.e Deposit, SiloId: 20
+    string[] public incentiveProgramNames = ["wS_sUSDC_0020", "SILO_sUSDC_0020"];
     bool public toSonic = false;
 
     // // Silo - S

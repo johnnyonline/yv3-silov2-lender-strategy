@@ -1,0 +1,12 @@
+DEPLOYED ADDRESSES (Sonic):
+- Factory - 0x61810a90128Ee5c5F5a3730f0449Da9E9480f888
+- Swapper (toSonic==false) - 0x71ccF86Cf63A5d55B12AA7E7079C22f39112Dd7D
+
+DEPLOY STRATEGY:
+1. Use the factory
+2. acceptManagement()
+3. setMaxProfitUnlockTime() to 86400
+
+DEPLOY APR ORACLE @todo
+
+DEPLOY ALLOCATOR VAULT @todo
