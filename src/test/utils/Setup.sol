@@ -7,7 +7,7 @@ import {ExtendedTest} from "./ExtendedTest.sol";
 import {AuctionMock} from "../mocks/AuctionMock.sol";
 import {Swapper} from "../../Swapper.sol";
 import {SiloV2LenderStrategy as Strategy, ERC20, ISilo} from "../../Strategy.sol";
-import {StrategyFactory} from "../../StrategyFactory.sol";
+import {SiloV2LenderStrategyFactory as StrategyFactory} from "../../StrategyFactory.sol";
 import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
 
 // Inherit the events so they can be checked if desired.
@@ -33,19 +33,19 @@ contract Setup is ExtendedTest, IEvents {
     ERC20 public constant SILO = ERC20(0x53f753E4B17F4075D6fa2c6909033d224b81e698);
     ERC20 public constant WRAPPED_S = ERC20(0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38);
 
-    // // Silo - USDC
-    // address public siloLendToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8 (SILO1)
-    // address public siloCollateralToken = 0xE223C8e92AA91e966CA31d5C6590fF7167E25801; // Borrowable wS Deposit, SiloId: 8 (SILO0)
-    // address public siloIncentivesController = 0x0dd368Cd6D8869F2b21BA3Cb4fd7bA107a2e3752; // Borrowable USDC.e Deposit, SiloId: 8
-    // string[] public incentiveProgramNames = ["wS_sUSDC_008", "SILO_sUSDC_008"];
-    // bool public toSonic = false;
+    // Silo - USDC
+    address public siloLendToken = 0x4E216C15697C1392fE59e1014B009505E05810Df; // Borrowable USDC.e Deposit, SiloId: 8 (SILO1)
+    address public siloCollateralToken = 0xE223C8e92AA91e966CA31d5C6590fF7167E25801; // Borrowable wS Deposit, SiloId: 8 (SILO0)
+    address public siloIncentivesController = 0x0dd368Cd6D8869F2b21BA3Cb4fd7bA107a2e3752; // Borrowable USDC.e Deposit, SiloId: 8
+    string[] public incentiveProgramNames = ["wS_sUSDC_008", "SILO_sUSDC_008"];
+    bool public toSonic = false;
 
-    // Silo - S
-    address public siloLendToken = 0x24F7692af5231d559219d07c65276Ad8C8ceE9A3; // Borrowable wS Deposit, SiloId: 40 (SILO1)
-    address public siloCollateralToken = 0x058766008d237faF3B05eeEebABc73C64d677bAE; // Borrowable PT-stS-29May Deposit, SiloId: 40 (SILO0)
-    address public siloIncentivesController = 0x4BeFBc8E3885f124C683a2ee4E0B69e785b2C83E; // Borrowable USDC.e Deposit, SiloId: 8
-    string[] public incentiveProgramNames = ["SILO_swS_0040"];
-    bool public toSonic = true;
+    // // Silo - S
+    // address public siloLendToken = 0x24F7692af5231d559219d07c65276Ad8C8ceE9A3; // Borrowable wS Deposit, SiloId: 40 (SILO1)
+    // address public siloCollateralToken = 0x058766008d237faF3B05eeEebABc73C64d677bAE; // Borrowable PT-stS-29May Deposit, SiloId: 40 (SILO0)
+    // address public siloIncentivesController = 0x4BeFBc8E3885f124C683a2ee4E0B69e785b2C83E; // Borrowable USDC.e Deposit, SiloId: 8
+    // string[] public incentiveProgramNames = ["SILO_swS_0040"];
+    // bool public toSonic = true;
 
     // Contract instances that we will use repeatedly.
     ERC20 public asset;
@@ -93,8 +93,8 @@ contract Setup is ExtendedTest, IEvents {
         }
 
         // Set asset
-        // asset = ERC20(tokenAddrs["USDC - Sonic"]);
-        asset = ERC20(tokenAddrs["wS"]);
+        asset = ERC20(tokenAddrs["USDC - Sonic"]);
+        // asset = ERC20(tokenAddrs["wS"]);
 
         // Set decimals
         decimals = asset.decimals();
@@ -177,6 +177,7 @@ contract Setup is ExtendedTest, IEvents {
     }
 
     function airdropToSiloAndS(address _to, uint256 _amount, bool _airdropS) public {
+        if (_amount < 1 ether) _amount = 1 ether; // NOTE: this might fail the S tests but required for USDC ones
         airdrop(SILO, _to, _amount);
         if (_airdropS) airdrop(WRAPPED_S, _to, _amount);
     }

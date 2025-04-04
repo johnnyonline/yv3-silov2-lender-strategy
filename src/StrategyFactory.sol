@@ -4,7 +4,7 @@ pragma solidity ^0.8.18;
 import {SiloV2LenderStrategy as Strategy} from "./Strategy.sol";
 import {IStrategyInterface} from "./interfaces/IStrategyInterface.sol";
 
-contract StrategyFactory {
+contract SiloV2LenderStrategyFactory {
 
     event NewStrategy(address indexed strategy, address indexed asset);
 
