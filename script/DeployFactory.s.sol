@@ -9,11 +9,6 @@ import "forge-std/Script.sol";
 // forge script script/DeployFactory.s.sol:DeployFactory --verify --legacy --etherscan-api-key $KEY --rpc-url $RPC_URL --broadcast
 
 // verify:
-// address _asset,
-//         string memory _name,
-//         address _vault,
-//         address _incentivesController,
-//         address _swapper
 // --constructor-args $(cast abi-encode "constructor(address,string,address,address,address)" 0x29219dd400f2Bf60E5a23d13Be72B486D4038894 "Silo Lender S/USDC (8)" 0x4E216C15697C1392fE59e1014B009505E05810Df 0x0dd368Cd6D8869F2b21BA3Cb4fd7bA107a2e3752 0x71ccF86Cf63A5d55B12AA7E7079C22f39112Dd7D)
 // forge verify-contract --etherscan-api-key $KEY --watch --chain-id 42161 --compiler-version v0.8.18+commit.87f61d96 --verifier-url https://api.arbiscan.io/api 0x9a5eca1b228e47a15BD9fab07716a9FcE9Eebfb5 src/ERC404/BaseERC404.sol:BaseERC404
 

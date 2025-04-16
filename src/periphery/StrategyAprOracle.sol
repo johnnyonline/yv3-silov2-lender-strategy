@@ -27,6 +27,10 @@ contract SiloV2LenderStrategyAprOracle is AprOracleBase {
     /// @notice Precision for the lend APR
     uint256 private constant _PRECISION = 1e18;
 
+    /// @notice Silo has this bizarre decimal offset for shares
+    ///         (see e.g. https://sonicscan.org/address/0x322e1d5384aa4ED66AeCa770B95686271de61dc3#code, SiloMathLib.sol, L13)
+    uint256 private constant _SILO_DECIMALS_OFFSET = 1e3;
+
     /// @notice The SiloLens address. Used to get the borrow APR
     ISiloLens public immutable SILO_LENS;
 
@@ -107,8 +111,8 @@ contract SiloV2LenderStrategyAprOracle is AprOracleBase {
         uint256 _totalAssetsAfterDelta
     ) internal view returns (uint256 _apr) {
         uint256 _assetPrecision = 10 ** IERC20Metadata(_strategy.asset()).decimals();
-        uint256 _totalSupplyAfterDelta =
-            _silo.convertToAssets(10 ** _silo.decimals()) * _totalAssetsAfterDelta / _assetPrecision;
+        uint256 _totalSupplyAfterDelta = _silo.convertToAssets(10 ** _silo.decimals() * _SILO_DECIMALS_OFFSET)
+            * _totalAssetsAfterDelta / _assetPrecision;
 
         ISiloIncentivesController _incentivesController = _strategy.incentivesController();
         string[] memory _programs = _strategy.getAllProgramNames();

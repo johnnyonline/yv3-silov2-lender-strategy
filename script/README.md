@@ -7,8 +7,13 @@ DEPLOY STRATEGY:
 
 DEPLOY ALLOCATOR VAULT
 1. Registry.newEndorsedVault() (If no RoleManager - RoleManagerFactory.newProject())
+2. vault.set_role(address, 16383) // 16383 == ADD_STRATEGY_MANAGER/DEPOSIT_LIMIT_MANAGER/MAX_DEBT_MANAGER/DEBT_MANAGER
+3. vault.set_deposit_limit(uint256 deposit_limit)
+4. vault.add_strategy(address new_strategy)
+5. vault.update_max_debt_for_strategy(address strategy,uint256 new_max_debt)
 
-DEPLOY APR ORACLE @todo
+DEPLOY APR ORACLE
+1. @todo
 
 ** YEARN **
 
@@ -19,7 +24,7 @@ DEPLOYED ADDRESSES (all EVM - if not deployed, use https://github.com/wavey0x/ye
 ** SONIC **
 
 DEPLOYED ADDRESSES:
-- Factory - 0x61810a90128Ee5c5F5a3730f0449Da9E9480f888
+- SiloV2Lender Factory - 0x61810a90128Ee5c5F5a3730f0449Da9E9480f888
 - Swapper (toSonic==false) - 0x71ccF86Cf63A5d55B12AA7E7079C22f39112Dd7D
 --
 - SMS - 0x35442eC4C1A0C4E864c2Bc45bfc5d17fCEE8ac4C
@@ -28,3 +33,7 @@ DEPLOYED ADDRESSES:
 --
 - Silo Lender S/USDC (8) - 0x3FfA0C3fba4Adfe2b6e4D7E2f8E6e6324bE5305B
 - Silo Lender S/USDC (20) - 0xf1dF9a0390Fd65984F311f17230B9F6B85497C6e
+--
+- APR Oracle - 0xDd737dADA46F3A111074dCE29B9430a7EA000092
+--
+- USDC-2 yVault - 0xb9228370e2fa4908FC2Bf559a50bB77ba66fDD66
