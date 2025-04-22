@@ -13,13 +13,15 @@ DEPLOY ALLOCATOR VAULT
 5. vault.update_max_debt_for_strategy(address strategy,uint256 new_max_debt)
 
 DEPLOY APR ORACLE
-1. @todo
+1. call `setOracle()` from the strategy's management on the central apr oracle
 
 ** YEARN **
 
 DEPLOYED ADDRESSES (all EVM - if not deployed, use https://github.com/wavey0x/yearn-v3-deployer):
 - RoleManagerFactory - 0xca12459a931643BF28388c67639b3F352fe9e5Ce
+- Address Provider - 0x775F09d6f3c8D2182DFA8bce8628acf51105653c
 - Registry - 0xd40ecF29e001c76Dcc4cC0D9cd50520CE845B038
+- Central AprOracle - 0x1981AD9F44F2EA9aDd2dC4AD7D075c102C70aF92
 
 ** SONIC **
 
